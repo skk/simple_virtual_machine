@@ -46,7 +46,7 @@ setup(name="simple-virtual-machine",
       cmdclass={'test': PyTest},
 
       # TODO: List of packages that this one depends upon:
-      install_requires=[],
+      install_requires=['docopt'],
       # TODO: List executable scripts, provided by the package (this is just an example)
       entry_points={
         'console_scripts':
