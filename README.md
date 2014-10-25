@@ -8,6 +8,9 @@ This is boilerplate code for your project, generated using the `python_boilerpla
   * [buildout](http://www.buildout.org/) for managing development tools or developing multiple-package projects
   * Usage of the [Travis-CI](https://travis-ci.org/) continuous integration service.
 
+.. image:: https://travis-ci.org/skk/simple_virtual_machine.svg?branch=master
+    :target: https://travis-ci.org/skk/simple_virtual_machine
+
 Preparation
 -----------
 
