@@ -5,18 +5,20 @@ Copyright 2014, Steven Knight
 Licensed under MIT.
 '''
 
+from docopt import docopt
 
 def main():
-    '''
-    Main function of the boilerplate code is the entry point of the 'simplevirtualmachine' executable script (defined in setup.py).
     
-    Use doctests, those are very helpful.
-    
-    >>> main()
-    Hello
-    >>> 2 + 2
-    4
-    '''
-    
-    print("Hello")
+    usage = """A Simple Virtual Machine
 
+Usage:
+  simple-vritual-machine (-h | --help)
+  simple-vritual-machine --version
+
+Options:
+  -h --help     Show this screen.
+  --version     Show version.
+
+"""
+    arguments = docopt(usage, version='simple version machien 1.0')
+    print arguments
