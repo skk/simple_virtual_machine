@@ -1,56 +1,21 @@
-import simplevirtualmachine.bytecodes.brf
-BRF = simplevirtualmachine.bytecodes.brf.BRF()
+from simplevirtualmachine.bytecodes.instruction import Instruction
 
-import simplevirtualmachine.bytecodes.br
-BR = simplevirtualmachine.bytecodes.br.BR()
-
-import simplevirtualmachine.bytecodes.brt
-BRT = simplevirtualmachine.bytecodes.brt.BRT()
-
-import simplevirtualmachine.bytecodes.call 
-CALL = simplevirtualmachine.bytecodes.call.CALL()
-
-import simplevirtualmachine.bytecodes.gload 
-GLOAD = simplevirtualmachine.bytecodes.gload.GLOAD()
-
-import simplevirtualmachine.bytecodes.gstore 
-GSTORE = simplevirtualmachine.bytecodes.gstore.GSTORE()
-
-import simplevirtualmachine.bytecodes.halt 
-HALT = simplevirtualmachine.bytecodes.halt.HALT()
-
-import simplevirtualmachine.bytecodes.iadd 
-IADD = simplevirtualmachine.bytecodes.iadd.IADD()
-
-import simplevirtualmachine.bytecodes.iconst 
-ICONST = simplevirtualmachine.bytecodes.iconst.ICONST()
-
-import simplevirtualmachine.bytecodes.ieq 
-IEQ = simplevirtualmachine.bytecodes.ieq.IEQ()
-
-import simplevirtualmachine.bytecodes.ilt 
-ILT= simplevirtualmachine.bytecodes.ilt.ILT()
-
-import simplevirtualmachine.bytecodes.imul 
-IMUL = simplevirtualmachine.bytecodes.imul.IMUL()
-
-import simplevirtualmachine.bytecodes.invalid 
-INVALID = simplevirtualmachine.bytecodes.invalid.INVALID()
-
-import simplevirtualmachine.bytecodes.isub 
-ISUB = simplevirtualmachine.bytecodes.isub.ISUB()
-
-import simplevirtualmachine.bytecodes.load 
-LOAD = simplevirtualmachine.bytecodes.load.LOAD()
-
-import simplevirtualmachine.bytecodes.pop 
-POP = simplevirtualmachine.bytecodes.pop.POP()
-
-import simplevirtualmachine.bytecodes.puts 
-PUTS = simplevirtualmachine.bytecodes.puts.PUTS ()
-
-import simplevirtualmachine.bytecodes.ret 
-RET = simplevirtualmachine.bytecodes.ret.RET()
-
-import simplevirtualmachine.bytecodes.store 
-STORE = simplevirtualmachine.bytecodes.store.STORE()
+INVALID = Instruction(0)
+IADD = Instruction(1)
+ISUB = Instruction(2)
+IMUL = Instruction(3)
+IEQ = Instruction(5)
+ILT = Instruction(4)
+BR = Instruction(6, 1)
+BRT = Instruction(7, 1)
+BRF = Instruction(8, 1)
+ICONST = Instruction(9,1)
+LOAD = Instruction(10, 1)
+GLOAD = Instruction(11,1)
+STORE = Instruction(12, 1)
+GSTORE = Instruction(13,1)
+PUTS = Instruction(14)
+POP = Instruction(15, 1)
+CALL = Instruction(16, 1)
+RET = Instruction(17, 1)
+HALT = Instruction(18)
