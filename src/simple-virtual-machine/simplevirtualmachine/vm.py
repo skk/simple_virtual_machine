@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 
+import logging
+
 from simplevirtualmachine.bytecodes.bytecodes import *
 from simplevirtualmachine.bytecodes.instruction import Instruction
 
-import logging
 
-class VM:
+class VM(object):
     """Implemenation of a (very) simple virtual machine."""
-    
-    def __init__(self, code, ip = 0, datasize = 0):
+
+    def __init__(self, code, ip=0):
         self.code = code
         self.ip = ip
         self.fp = 0
@@ -22,27 +23,30 @@ class VM:
         self.logger.addHandler(handler)
         self.logger.setLevel(logging.DEBUG)
         self.logger.debug("\n" + "-" * 80)
-        
-    def format_instr_or_object(self, obj):
+
+    @classmethod
+    def format_instr_or_object(cls, obj):
         """Return string with obj formatted as an instruction."""
         if isinstance(obj, Instruction):
             return Instruction.to_instruction_from_opcode(obj.opcode)
         else:
             return str(obj)
-        
+
     def __str__(self):
         '''Return the current state of the VM (e.g. FP, IP, STACK, etc).'''
-        buf = ["FP {fp}, IP {ip}, SP {sp},\nDATA {data},\nSTACK {stack},\n".format(fp = self.fp, ip = self.ip, data = self.data, stack = self.stack)]
+        buf = ["FP {fp}, IP {ip}, SP {sp},\nDATA {data},\nSTACK {stack},\n".
+               format(fp=self.fp, ip=self.ip, sp=self.sp,
+                      data=self.data, stack=self.stack)]
         buf.append("CODE ['")
         bufcode = []
-        for k, v in dic.iteritems():
-            bufcode.append(self.format_instr_or_object(v))
-            
+        for v in self.code:
+            bufcode.append(VM.format_instr_or_object(v))
+
             buf.append(",".join(bufcode))
             buf.append(']')
-            
-            return "".join(buf)
-        
+
+        return "".join(buf)
+
     def run(self):
         '''Exec the virual machine.'''
         # fetch opcode
@@ -54,37 +58,47 @@ class VM:
         while opcode != HALT and self.ip <= len(self.code):
             self.logger.debug(self.display_instruction())
             self.ip += 1
-            
+
             # decode
             if opcode == IADD:
-                b = self.stack[self.sp]; self.sp -= 1
-                a = self.stack[self.sp]; self.sp -= 1
+                b = self.stack[self.sp]
+                self.sp -= 1
+                a = self.stack[self.sp]
+                self.sp -= 1
                 self.stack[self.sp] = a + b
                 self.sp += 1
             elif opcode == ISUB:
-                b = self.stack[self.sp]; self.sp -= 1
-                a = self.stack[self.sp]; self.sp -= 1
+                b = self.stack[self.sp]
+                self.sp -= 1
+                a = self.stack[self.sp]
+                self.sp -= 1
                 self.stack[self.sp] = a - b
                 self.sp += 1
             elif opcode == IMUL:
-                b = self.stack[self.sp]; self.sp -= 1
-                a = self.stack[self.sp]; self.sp -= 1
+                b = self.stack[self.sp]
+                self.sp -= 1
+                a = self.stack[self.sp]
+                self.sp -= 1
                 self.stack[self.sp] = a * b
                 self.sp += 1
             elif opcode == ILT:
-                b = self.stack[self.sp]; self.sp -= 1
-                a = self.stack[self.sp]; self.sp -= 1
+                b = self.stack[self.sp]
+                self.sp -= 1
+                a = self.stack[self.sp]
+                self.sp -= 1
                 self.stack[self.sp] = (a < b)
                 self.sp += 1
             elif opcode == IEQ:
-                b = self.stack[self.sp]; self.sp -= 1
-                a = self.stack[self.sp]; self.sp -= 1
+                b = self.stack[self.sp]
+                self.sp -= 1
+                a = self.stack[self.sp]
+                self.sp -= 1
                 self.stack[self.sp] = (a == b)
                 self.sp += 1
             elif opcode == BR:
                 pass
             elif opcode == BRT:
-                pass 
+                pass
             elif opcode == BRF:
                 pass
             elif opcode == ICONST:
@@ -117,13 +131,12 @@ class VM:
             else:
                 rv = INVALID
                 raise StandardError("Invalid opcode {opcode} at ip = {ip}".
-                                    format(opcode = opcode, ip = self.ip  -1 ))
-            
+                                    format(opcode=opcode, ip=self.ip-1))
+
             self.logger.debug(self.dump_stack())
             self.logger.debug("\n")
             opcode = self.code[self.ip]
-        
-        
+
         self.logger.debug(self.display_instruction())
         self.logger.debug(self.dump_stack())
         self.logger.debug("\n")
@@ -135,66 +148,49 @@ class VM:
     def display_instruction(self):
         '''Dislay instruction'''
         opcode = self.code[self.ip]
-        
+
         if opcode.operand_count > 0:
             start_idx = self.ip + 1
             end_idx = self.ip + opcode.operand_count
             buf = []
-            for i in range(start_idx, end_idx):
-                buf.append(code[idx])
-    
+            for idx in range(start_idx, end_idx):
+                buf.append(self.code[idx])
+
             operands = ", ".join(buf)
             return "IP: {:04d}: SP: {:04d} OPCODE: {:10s} OPERANDS: {:10s}".format(
-                self.ip, self.sp, Instruction.to_instruction_from_opcode(opcode), operands)
+                self.ip, self.sp,
+                Instruction.to_instruction_from_opcode(opcode), operands)
 
         return ""
-        
+
     def dump_stack(self):
         '''Return the dump of the stack.'''
         buf = []
         for s in self.stack:
-            if s != None:
+            if s is not None:
                 buf.append(str(s))
-        
+
         return "SP {}, stack=[{:10s}]".format(self.sp, ", ".join(buf))
-            
+
     def dump_data_memory(self):
         '''Return the dump of the data memory.'''
         addr = -1
         buf = ["Data memory:"]
         for d in self.data:
             addr += 1
-            if d != None:
+            if d is not None:
                 buf.append("{:4d} {}".format(addr, d))
-        
+
         return "\n".join(buf)
-            
+
     def dump_code_memory(self):
         '''Return the dump of the code memory.'''
         addr = -1
         buf = ["Code memory:"]
         for c in self.code:
             addr += 1
-            if c != None:
+            if c is not None:
                 buf.append("{:4d} {}".format(addr, c))
-                
+
         return "\n".join(buf)
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
+
