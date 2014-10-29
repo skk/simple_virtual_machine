@@ -2,7 +2,9 @@
 
 import logging
 
-from simplevirtualmachine.bytecodes.bytecodes import *
+from simplevirtualmachine.bytecodes.bytecodes import INVALID, IADD, ISUB, IMUL, \
+    IEQ, ILT, BR, BRT, BRF, ICONST, LOAD, GLOAD, STORE, GSTORE, \
+    PUTS, POP, CALL, RET, HALT
 from simplevirtualmachine.bytecodes.instruction import Instruction
 
 
@@ -17,8 +19,8 @@ class VM(object):
         self.data = [None] * len(self.code)
         self.stack = [None] * len(self.code)
         self.logger = logging.getLogger(__name__)
-        formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
-        handler = logging.StreamHandler()
+        formatter = logging.Formatter('%(asctime)s %(name)s - %(levelname)s - %(message)s')
+        handler = logging.FileHandler("./vm-output.log")
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
         self.logger.setLevel(logging.DEBUG)
@@ -131,7 +133,7 @@ class VM(object):
             else:
                 rv = INVALID
                 raise StandardError("Invalid opcode {opcode} at ip = {ip}".
-                                    format(opcode=opcode, ip=self.ip-1))
+                                    format(opcode=opcode, ip=self.ip - 1))
 
             self.logger.debug(self.dump_stack())
             self.logger.debug("\n")
@@ -144,7 +146,7 @@ class VM(object):
         self.logger.debug(self.dump_code_memory())
         self.logger.debug("RV {rv}".format(rv=rv))
         return rv
-    
+
     def display_instruction(self):
         '''Dislay instruction'''
         opcode = self.code[self.ip]
@@ -193,4 +195,4 @@ class VM(object):
                 buf.append("{:4d} {}".format(addr, c))
 
         return "\n".join(buf)
-
+    
