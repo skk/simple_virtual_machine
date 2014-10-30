@@ -1,26 +1,27 @@
 # -*- coding: utf-8 -*-
 
 import logging
+from collections import OrderedDict
 
 from simplevirtualmachine.bytecodes.bytecodes import INVALID, IADD, ISUB, IMUL, \
     IEQ, ILT, BR, BRT, BRF, ICONST, LOAD, GLOAD, STORE, GSTORE, \
     PUTS, POP, CALL, RET, HALT
-from simplevirtualmachine.bytecodes.instruction import Instruction
+from simplevirtualmachine.bytecodes.instruction import Instruction, InvalidInstructionError
 
 
 class VM(object):
     """Implemenation of a (very) simple virtual machine."""
-
+    
     def __init__(self, code, ip=0):
         self.code = code
         self.ip = ip
         self.fp = 0
         self.sp = -1
-        self.data = [None] * len(self.code)
-        self.stack = [None] * len(self.code)
+        self.data = OrderedDict()  # [None] * len(self.code)
+        self.stack = OrderedDict()
         self.logger = logging.getLogger(__name__)
         formatter = logging.Formatter('%(asctime)s %(name)s - %(levelname)s - %(message)s')
-        handler = logging.FileHandler("./vm-output.log")
+        handler = logging.StreamHandler()
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
         self.logger.setLevel(logging.DEBUG)
@@ -41,9 +42,9 @@ class VM(object):
                       data=self.data, stack=self.stack)]
         buf.append("CODE ['")
         bufcode = []
-        for v in self.code:
+        for k, v in self.code.items():
             bufcode.append(VM.format_instr_or_object(v))
-
+            
             buf.append(",".join(bufcode))
             buf.append(']')
 
@@ -132,9 +133,9 @@ class VM(object):
                 rv = HALT
             else:
                 rv = INVALID
-                raise StandardError("Invalid opcode {opcode} at ip = {ip}".
-                                    format(opcode=opcode, ip=self.ip - 1))
-
+                raise InvalidInstructionError("Invalid opcode {opcode} at ip = {ip}".format(
+                    opcode=opcode, ip=self.ip - 1))
+            
             self.logger.debug(self.dump_stack())
             self.logger.debug("\n")
             opcode = self.code[self.ip]
@@ -168,12 +169,11 @@ class VM(object):
     def dump_stack(self):
         '''Return the dump of the stack.'''
         buf = []
-        for s in self.stack:
-            if s is not None:
-                buf.append(str(s))
-
+        for v in self.stack.itervalues():
+            buf.append(str(v))
+                
         return "SP {}, stack=[{:10s}]".format(self.sp, ", ".join(buf))
-
+            
     def dump_data_memory(self):
         '''Return the dump of the data memory.'''
         addr = -1
@@ -182,17 +182,20 @@ class VM(object):
             addr += 1
             if d is not None:
                 buf.append("{:4d} {}".format(addr, d))
-
+               
         return "\n".join(buf)
-
+                    
     def dump_code_memory(self):
         '''Return the dump of the code memory.'''
         addr = -1
         buf = ["Code memory:"]
         for c in self.code:
             addr += 1
-            if c is not None:
-                buf.append("{:4d} {}".format(addr, c))
-
+            buf.append("{:4d} {}".format(addr, c))
+                                
         return "\n".join(buf)
-    
+                            
+                            
+                            
+                            
+                            
