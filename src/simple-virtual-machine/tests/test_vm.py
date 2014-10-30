@@ -4,7 +4,7 @@ import logging
 
 from simplevirtualmachine.bytecodes import INVALID, IADD, ISUB, IMUL, \
     IEQ, ILT, ICONST, LOAD, GLOAD, STORE, GSTORE, \
-    PUTS, POP, CALL, RET, HALT, BR, BRT, BRF, InvalidInstructionError
+    PUTS, POP, CALL, RET, HALT, BR, BRT, BRF, InvalidBytecodeError
 from simplevirtualmachine.vm import VM
 
 logger = logging.getLogger(__name__)
@@ -24,7 +24,7 @@ def test_invalid():
     rv = None
     try:
         rv = vm.run()
-    except InvalidInstructionError as e:
+    except InvalidBytecodeError as e:
         logger.debug(e)
         rv = e.bytecode
     else:
