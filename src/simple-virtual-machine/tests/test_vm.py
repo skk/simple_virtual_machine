@@ -4,7 +4,7 @@ import logging
 
 from simplevirtualmachine.bytecodes.bytecodes import INVALID, IADD, ISUB, IMUL, \
     IEQ, ILT, ICONST, LOAD, GLOAD, STORE, GSTORE, \
-    PUTS, POP, CALL, RET, HALT
+    PUTS, POP, CALL, RET, HALT, BR, BRT, BRF
 from simplevirtualmachine.bytecodes.instruction import InvalidInstructionError
 from simplevirtualmachine.vm import VM
 
@@ -97,3 +97,36 @@ def test_load_two_constants_sub_and_halt_pos_result():
 
     # should halt
     assert rv == HALT
+    
+  
+def _test_loop():
+    instructions = [
+        # .GLOBALS 2; N, I
+        # N = 10           ADDRESS
+        ICONST, 10,            # 0
+        GSTORE, 0,             # 2
+        # I = 0
+        ICONST, 0,             # 4
+        GSTORE, 1,             # 6
+        # WHILE I<N:
+        # START (8):
+        GLOAD, 1,              # 8
+        GLOAD, 0,              # 10
+        ILT,                   # 12
+        BRF, 24,               # 13
+        #     I = I + 1
+        GLOAD, 1,              # 15
+        ICONST, 1,             # 17
+        IADD,                  # 19
+        GSTORE, 1,             # 20
+        BR, 8,                 # 22
+        # DONE (24):
+        # PRINT "LOOPED "+N+" TIMES."
+        HALT                   # 24
+    ]
+    vm = VM(instructions)
+    rv = vm.run()
+
+    # should halt
+    assert rv == HALT
+
