@@ -10,14 +10,15 @@ from simplevirtualmachine.bytecodes import INVALID, IADD, ISUB, IMUL, \
 
 class VM(object):
     """Implemenation of a (very) simple virtual machine."""
-    
-    def __init__(self, code, ip=0):
-        self.code = code
-        self.ip = ip
-        self.fp = 0
+
+    def __init__(self, *code):
+        VM.DEFAULT_STACK_SIZE = 1000
+        self.ip = 0
+        self.fp = -1
         self.sp = -1
-        self.data = OrderedDict()  # [None] * len(self.code)
-        self.stack = OrderedDict()
+        self.code = code
+        self.data = OrderedDict()
+        self.stack = [None for i in range(VM.DEFAULT_STACK_SIZE)]
         self.logger = logging.getLogger(__name__)
         formatter = logging.Formatter('%(asctime)s %(name)s - %(levelname)s - %(message)s')
         handler = logging.StreamHandler()
@@ -50,7 +51,7 @@ class VM(object):
         return "".join(buf)
 
     def run(self):
-        '''Exec the virual machine.'''
+        '''Simulate the fetch-decode execute cycle.'''
         # fetch opcode
         opcode = self.code[self.ip]
         rv = HALT
@@ -106,7 +107,7 @@ class VM(object):
             elif opcode == ICONST:
                 v = self.code[self.ip]
                 self.ip += 1
-
+                
                 self.sp += 1
                 self.stack[self.sp] = v
             elif opcode == LOAD:
@@ -168,8 +169,9 @@ class VM(object):
     def dump_stack(self):
         '''Return the dump of the stack.'''
         buf = []
-        for v in self.stack.itervalues():
-            buf.append(str(v))
+        for v in self.stack:
+            if v is not None:
+                buf.append(str(v))
                 
         return "SP {}, stack=[{:10s}]".format(self.sp, ", ".join(buf))
             

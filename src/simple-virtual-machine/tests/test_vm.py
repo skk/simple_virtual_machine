@@ -16,11 +16,11 @@ logger.setLevel(logging.DEBUG)
  
 
 def test_halt():
-    assert VM([HALT]).run() == HALT
+    assert VM(HALT).run() == HALT
 
 
 def test_invalid():
-    vm = VM([INVALID])
+    vm = VM(INVALID)
     rv = None
     try:
         rv = vm.run()
@@ -32,7 +32,7 @@ def test_invalid():
 
 
 def test_load_and_halt():
-    vm = VM([ICONST, 100, HALT])
+    vm = VM(ICONST, 100, HALT)
     rv = vm.run()
 
     # stack should load 100
@@ -43,7 +43,7 @@ def test_load_and_halt():
 
 
 def test_load_two_constants():
-    vm = VM([ICONST, 1, ICONST, 2, HALT])
+    vm = VM(ICONST, 1, ICONST, 2, HALT)
     rv = vm.run()
 
     # stack should load 1 and 2
@@ -55,7 +55,7 @@ def test_load_two_constants():
 
 
 def test_load_two_constants_add_and_halt():
-    vm = VM([ICONST, 1, ICONST, 2, IADD, PUTS, HALT])
+    vm = VM(ICONST, 1, ICONST, 2, IADD, PUTS, HALT)
     rv = vm.run()
 
     # stack should have result of IADD
@@ -66,7 +66,7 @@ def test_load_two_constants_add_and_halt():
 
 
 def test_load_two_constants_mul_and_halt():
-    vm = VM([ICONST, 2, ICONST, 8, IMUL, PUTS, HALT])
+    vm = VM(ICONST, 2, ICONST, 8, IMUL, PUTS, HALT)
     rv = vm.run()
 
     # stack should have result of IMUL
@@ -77,7 +77,7 @@ def test_load_two_constants_mul_and_halt():
 
 
 def test_load_two_constants_sub_and_halt_neg_result():
-    vm = VM([ICONST, 14, ICONST, 20, ISUB, PUTS, HALT])
+    vm = VM(ICONST, 14, ICONST, 20, ISUB, PUTS, HALT)
     rv = vm.run()
 
     # stack should have result of ISUB
@@ -88,7 +88,7 @@ def test_load_two_constants_sub_and_halt_neg_result():
 
 
 def test_load_two_constants_sub_and_halt_pos_result():
-    vm = VM([ICONST, 51, ICONST, 23, ISUB, PUTS, HALT])
+    vm = VM(ICONST, 51, ICONST, 23, ISUB, PUTS, HALT)
     rv = vm.run()
 
     # stack should have result of ISUB
