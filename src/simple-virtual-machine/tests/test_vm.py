@@ -2,10 +2,9 @@
 
 import logging
 
-from simplevirtualmachine.bytecodes.bytecodes import INVALID, IADD, ISUB, IMUL, \
+from simplevirtualmachine.bytecodes import INVALID, IADD, ISUB, IMUL, \
     IEQ, ILT, ICONST, LOAD, GLOAD, STORE, GSTORE, \
-    PUTS, POP, CALL, RET, HALT, BR, BRT, BRF
-from simplevirtualmachine.bytecodes.instruction import InvalidInstructionError
+    PUTS, POP, CALL, RET, HALT, BR, BRT, BRF, InvalidInstructionError
 from simplevirtualmachine.vm import VM
 
 logger = logging.getLogger(__name__)

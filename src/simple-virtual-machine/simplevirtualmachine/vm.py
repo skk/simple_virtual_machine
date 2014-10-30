@@ -3,10 +3,9 @@
 import logging
 from collections import OrderedDict
 
-from simplevirtualmachine.bytecodes.bytecodes import INVALID, IADD, ISUB, IMUL, \
+from simplevirtualmachine.bytecodes import INVALID, IADD, ISUB, IMUL, \
     IEQ, ILT, BR, BRT, BRF, ICONST, LOAD, GLOAD, STORE, GSTORE, \
-    PUTS, POP, CALL, RET, HALT
-from simplevirtualmachine.bytecodes.instruction import Instruction, InvalidInstructionError
+    PUTS, POP, CALL, RET, HALT, Bytecode, InvalidBytecodeError
 
 
 class VM(object):
@@ -30,8 +29,8 @@ class VM(object):
     @classmethod
     def format_instr_or_object(cls, obj):
         """Return string with obj formatted as an instruction."""
-        if isinstance(obj, Instruction):
-            return Instruction.to_instruction_from_opcode(obj.opcode)
+        if isinstance(obj, Bytecode):
+            return Bytecode.to_instruction_from_opcode(obj.opcode)
         else:
             return str(obj)
 
@@ -133,7 +132,7 @@ class VM(object):
                 rv = HALT
             else:
                 rv = INVALID
-                raise InvalidInstructionError("Invalid opcode {opcode} at ip = {ip}".format(
+                raise InvalidBytecodeError("Invalid opcode {opcode} at ip = {ip}".format(
                     opcode=opcode, ip=self.ip - 1))
             
             self.logger.debug(self.dump_stack())
@@ -162,7 +161,7 @@ class VM(object):
             operands = ", ".join(buf)
             return "IP: {:04d}: SP: {:04d} OPCODE: {:10s} OPERANDS: {:10s}".format(
                 self.ip, self.sp,
-                Instruction.to_instruction_from_opcode(opcode), operands)
+                Bytecode.to_instruction_from_opcode(opcode), operands)
 
         return ""
 
