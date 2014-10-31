@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 
 import logging
-from collections import OrderedDict
 
 from simplevirtualmachine.bytecodes import INVALID, IADD, ISUB, IMUL, \
     IEQ, ILT, BR, BRT, BRF, ICONST, LOAD, GLOAD, STORE, GSTORE, \
     PUTS, POP, CALL, RET, HALT, Bytecode, InvalidBytecodeError
 
+TRUE = 1
+FALSE = 0
 
 class VM(object):
     """Implemenation of a (very) simple virtual machine."""
@@ -17,15 +18,16 @@ class VM(object):
         self.fp = -1
         self.sp = -1
         self.code = code
-        self.data = OrderedDict()
         self.stack = [None for i in range(VM.DEFAULT_STACK_SIZE)]
+        self.data = [None for i in range(VM.DEFAULT_STACK_SIZE)]
         self.logger = logging.getLogger(__name__)
-        formatter = logging.Formatter('%(asctime)s %(name)s - %(levelname)s - %(message)s')
+        formatter = logging.Formatter('%(message)s')
         handler = logging.StreamHandler()
+        # handler = logging.FileHandler("./vm-output.log")
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
         self.logger.setLevel(logging.DEBUG)
-        self.logger.debug("\n" + "-" * 80)
+        self.logger.debug("-" * 80)
 
     @classmethod
     def format_instr_or_object(cls, obj):
@@ -37,18 +39,19 @@ class VM(object):
 
     def __str__(self):
         '''Return the current state of the VM (e.g. FP, IP, STACK, etc).'''
-        buf = ["FP {fp}, IP {ip}, SP {sp},\nDATA {data},\nSTACK {stack},\n".
-               format(fp=self.fp, ip=self.ip, sp=self.sp,
-                      data=self.data, stack=self.stack)]
-        buf.append("CODE ['")
-        bufcode = []
-        for k, v in self.code.items():
-            bufcode.append(VM.format_instr_or_object(v))
-            
-            buf.append(",".join(bufcode))
-            buf.append(']')
+        buf = ["FP: {fp} IP: {ip} SP: {sp}".format(fp=self.fp, ip=self.ip, sp=self.sp)]
+        buf.append(self.dump_stack() + "\n")
+        buf.append(self.dump_data_memory() + "\n")
+        buf.append(self.dump_code_memory())
 
-        return "".join(buf)
+        return "\n".join(buf)
+    
+    def top_two_stack(self):
+        b = self.stack[self.sp]
+        self.sp -= 1
+        a = self.stack[self.sp]
+        self.sp -= 1
+        return (b, a)
 
     def run(self):
         '''Simulate the fetch-decode execute cycle.'''
@@ -56,75 +59,76 @@ class VM(object):
         opcode = self.code[self.ip]
         rv = HALT
 
-        self.logger.debug(self.dump_stack())
-
         while opcode != HALT and self.ip <= len(self.code):
             self.logger.debug(self.display_instruction())
             self.ip += 1
 
             # decode
             if opcode == IADD:
-                b = self.stack[self.sp]
-                self.sp -= 1
-                a = self.stack[self.sp]
-                self.sp -= 1
+                (b, a) = self.top_two_stack()
+                self.sp += 1
                 self.stack[self.sp] = a + b
-                self.sp += 1
             elif opcode == ISUB:
-                b = self.stack[self.sp]
-                self.sp -= 1
-                a = self.stack[self.sp]
-                self.sp -= 1
+                (b, a) = self.top_two_stack()
+                self.sp += 1
                 self.stack[self.sp] = a - b
-                self.sp += 1
             elif opcode == IMUL:
-                b = self.stack[self.sp]
-                self.sp -= 1
-                a = self.stack[self.sp]
-                self.sp -= 1
+                (b, a) = self.top_two_stack()
+                self.sp += 1
                 self.stack[self.sp] = a * b
-                self.sp += 1
             elif opcode == ILT:
-                b = self.stack[self.sp]
-                self.sp -= 1
-                a = self.stack[self.sp]
-                self.sp -= 1
-                self.stack[self.sp] = (a < b)
+                (b, a) = self.top_two_stack()
                 self.sp += 1
+                self.stack[self.sp] = TRUE if a < b else FALSE
             elif opcode == IEQ:
-                b = self.stack[self.sp]
-                self.sp -= 1
-                a = self.stack[self.sp]
-                self.sp -= 1
-                self.stack[self.sp] = (a == b)
+                (b, a) = self.top_two_stack()
                 self.sp += 1
+                self.stack[self.sp] = TRUE if a == b else FALSE
             elif opcode == BR:
-                pass
+                self.ip = self.code[self.ip]
             elif opcode == BRT:
-                pass
-            elif opcode == BRF:
-                pass
-            elif opcode == ICONST:
-                v = self.code[self.ip]
+                addr = self.code[self.ip]
                 self.ip += 1
-                
-                self.sp += 1
-                self.stack[self.sp] = v
-            elif opcode == LOAD:
-                pass
-            elif opcode == GLOAD:
-                pass
-            elif opcode == STORE:
-                pass
-            elif opcode == GSTORE:
-                pass
-            elif opcode == PUTS:
-                v = self.stack[self.sp]
+                if self.stack[self.sp] == TRUE:
+                    self.ip = addr
                 self.sp -= 1
-                print "OUTPUT: {}".format(v)
-                self.logger.debug("OUTPUT: {}".format(v))
+            elif opcode == BRF:
+                addr = self.code[self.ip]
+                self.ip += 1
+                if self.stack[self.sp] == FALSE:
+                    self.ip = addr
+                self.sp -= 1
+            elif opcode == ICONST:
+                self.sp += 1
+                self.stack[self.sp] = self.code[self.ip]
+                self.ip += 1
+            elif opcode == LOAD:
+                offset = self.code[self.ip]
+                self.ip += 1
+                self.sp += 1
+                self.stack[self.sp] = self.stack[self.fp + offset]
+            elif opcode == GLOAD:
+                addr = self.code[self.ip]
+                self.ip += 1
+                self.sp += 1
+                self.stack[self.sp] = self.data[addr]
+            elif opcode == STORE:
+                offset = self.code[self.ip]
+                self.ip += 1
+                self.sp -= 1
+                self.stack[self.fp + offset] = self.stack[self.sp]
+            elif opcode == GSTORE:
+                addr = self.code[self.ip]
+                self.ip += 1
+                self.data[addr] = self.stack[self.sp]
+                self.sp -= 1
+            elif opcode == PUTS:
+                msg = "OUTPUT: {}".format(self.stack[self.sp])
+                self.sp -= 1
+                print msg
+                self.logger.debug(msg)
             elif opcode == POP:
-                pass
+                self.sp -= 1
             elif opcode == CALL:
                 pass
             elif opcode == RET:
@@ -136,67 +140,71 @@ class VM(object):
                 raise InvalidBytecodeError("Invalid opcode {opcode} at ip = {ip}".format(
                     opcode=opcode, ip=self.ip - 1))
             
-            self.logger.debug(self.dump_stack())
-            self.logger.debug("\n")
+            self.print_stack()
             opcode = self.code[self.ip]
 
-        self.logger.debug(self.display_instruction())
-        self.logger.debug(self.dump_stack())
-        self.logger.debug("\n")
-        self.logger.debug(self.dump_data_memory())
-        self.logger.debug(self.dump_code_memory())
-        self.logger.debug("RV {rv}".format(rv=rv))
+        self.logger.debug("{}".format(self))
         return rv
 
     def display_instruction(self):
         '''Dislay instruction'''
         opcode = self.code[self.ip]
-
+        operands = []
+        self.logger.debug("opcode {}".format(opcode))
+            
+        operands = ""
         if opcode.operand_count > 0:
             start_idx = self.ip + 1
             end_idx = self.ip + opcode.operand_count
             buf = []
-            for idx in range(start_idx, end_idx):
-                buf.append(self.code[idx])
+            for idx in range(start_idx, end_idx + 1):
+                buf.append("{}".format(self.code[idx]))
 
             operands = ", ".join(buf)
-            return "IP: {:04d}: SP: {:04d} OPCODE: {:10s} OPERANDS: {:10s}".format(
-                self.ip, self.sp,
-                Bytecode.to_instruction_from_opcode(opcode), operands)
 
-        return ""
+        return "IP: {:04d}: SP: {:04d} OPCODE: {} OPERANDS: [{}]".format(
+            self.ip, self.sp, opcode, operands)
 
     def dump_stack(self):
         '''Return the dump of the stack.'''
         buf = []
-        for v in self.stack:
-            if v is not None:
-                buf.append(str(v))
-                
-        return "SP {}, stack=[{:10s}]".format(self.sp, ", ".join(buf))
+        if self.sp < 0:
+            return ""
+
+        for idx in range(self.sp + 1):
+            buf.append(str(self.stack[idx]))
             
+        return "SP {}, stack=[{}]".format(self.sp, ", ".join(buf))
+            
+    def print_stack(self):
+        self.logger.debug(self.dump_stack())
+
     def dump_data_memory(self):
         '''Return the dump of the data memory.'''
-        addr = -1
+        addr = 0
         buf = ["Data memory:"]
         for d in self.data:
-            addr += 1
             if d is not None:
-                buf.append("{:4d} {}".format(addr, d))
+                buf.append("{0:>4d} {1}".format(addr, d))
+            addr += 1
                
         return "\n".join(buf)
+
+    def print_data_memory(self):
+        self.logger.debug(self.dump_data_memory())
                     
     def dump_code_memory(self):
         '''Return the dump of the code memory.'''
-        addr = -1
+        addr = 0
         buf = ["Code memory:"]
         for c in self.code:
+            buf.append("{0:>04d} {1}".format(addr, c))
             addr += 1
-            buf.append("{:4d} {}".format(addr, c))
                                 
         return "\n".join(buf)
                             
-                            
+    def print_code_memory(self):
+        self.logger.debug(self.dump_code_memory())
                             
                             
                             
