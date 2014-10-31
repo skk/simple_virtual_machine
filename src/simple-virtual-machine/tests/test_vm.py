@@ -36,7 +36,7 @@ def test_load_and_halt(capsys):
     vm = VM(ICONST, 100, PUTS, HALT)
     rv = vm.run()
 
-    # vm should output be 100
+    # vm should output 100
     out, err = capsys.readouterr()
     assert out == "OUTPUT: {}\n".format(100)
 
@@ -48,7 +48,7 @@ def test_load_two_constants(capsys):
     vm = VM(ICONST, 1, ICONST, 2, PUTS, PUTS, HALT)
     rv = vm.run()
 
-    # vm should output be 1 and 2
+    # vm should output 1 and 2
     out, err = capsys.readouterr()
     assert out == "OUTPUT: {}\nOUTPUT: {}\n".format(2, 1)
 
@@ -60,7 +60,7 @@ def test_load_two_constants_add_and_halt(capsys):
     vm = VM(ICONST, 1, ICONST, 2, IADD, PUTS, HALT)
     rv = vm.run()
 
-    # vm should output be 3
+    # vm should output 3
     out, err = capsys.readouterr()
     assert out == "OUTPUT: {}\n".format(3)  # 1 + 2
 
@@ -72,7 +72,7 @@ def test_load_two_constants_mul_and_halt(capsys):
     vm = VM(ICONST, 2, ICONST, 8, IMUL, PUTS, HALT)
     rv = vm.run()
 
-    # vm should output be -6
+    # vm should output -6
     out, err = capsys.readouterr()
     assert out == "OUTPUT: {}\n".format(16)  # 2 * 8
 
@@ -84,7 +84,7 @@ def test_load_two_constants_sub_and_halt_neg_result(capsys):
     vm = VM(ICONST, 14, ICONST, 20, ISUB, PUTS, HALT)
     rv = vm.run()
 
-    # vm should output be -6
+    # vm should output -6
     out, err = capsys.readouterr()
     assert out == "OUTPUT: {}\n".format(-6)  # 14 - 20
 
@@ -96,7 +96,7 @@ def test_load_two_constants_sub_and_halt_pos_result(capsys):
     vm = VM(ICONST, 51, ICONST, 23, ISUB, PUTS, HALT)
     rv = vm.run()
 
-    # vm should output be 28
+    # vm should output 28
     out, err = capsys.readouterr()
     assert out == "OUTPUT: {}\n".format(28)  # 51 - 23
 
@@ -112,18 +112,18 @@ def test_gstore_and_gload(capsys):
     rv = vm.run()
     
     out, err = capsys.readouterr()
-    # vm should output be 28
+    # vm should output 28
     assert out == "OUTPUT: 99\n"
 
     # and should halt
     assert rv == HALT
     
     
-def test_loop():
+def test_loop(capsys):
     vm = VM(
         # .GLOBALS; N (CodeIndex: 0), I (CodeIndex: 1)
-        # N = 10           ADDRESS
-        ICONST, 10,            # 0
+        # N = 13           ADDRESS
+        ICONST, 13,            # 0
         GSTORE, 0,             # 2
         # I = 0
         ICONST, 0,             # 4
@@ -142,9 +142,15 @@ def test_loop():
         BR, 8,                 # 22
         # DONE (24):
         # PRINT "LOOPED "+N+" TIMES."
-        HALT                   # 24
+        GLOAD, 1,              # 24
+        PUTS,
+        HALT                   # 27
     )
     rv = vm.run()
+
+    out, err = capsys.readouterr()
+    # vm should output 13
+    assert out == "OUTPUT: 13\n"
 
     # should halt
     assert rv == HALT
