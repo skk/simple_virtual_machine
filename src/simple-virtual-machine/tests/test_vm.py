@@ -28,79 +28,100 @@ def test_invalid():
         logger.debug(e)
         rv = e.bytecode
     else:
+        # vm should return INVALID bytecode
         assert rv == INVALID
 
 
-def test_load_and_halt():
-    vm = VM(ICONST, 100, HALT)
+def test_load_and_halt(capsys):
+    vm = VM(ICONST, 100, PUTS, HALT)
     rv = vm.run()
 
-    # stack should load 100
-    assert vm.stack[vm.sp] == 100
+    # vm should output be 100
+    out, err = capsys.readouterr()
+    assert out == "OUTPUT: {}\n".format(100)
 
     # should halt
     assert rv == HALT
 
 
-def test_load_two_constants():
-    vm = VM(ICONST, 1, ICONST, 2, HALT)
+def test_load_two_constants(capsys):
+    vm = VM(ICONST, 1, ICONST, 2, PUTS, PUTS, HALT)
     rv = vm.run()
 
-    # stack should load 1 and 2
-    assert vm.stack[vm.sp - 1] == 1
-    assert vm.stack[vm.sp] == 2
+    # vm should output be 1 and 2
+    out, err = capsys.readouterr()
+    assert out == "OUTPUT: {}\nOUTPUT: {}\n".format(2, 1)
 
     # should halt
     assert rv == HALT
 
 
-def test_load_two_constants_add_and_halt():
+def test_load_two_constants_add_and_halt(capsys):
     vm = VM(ICONST, 1, ICONST, 2, IADD, PUTS, HALT)
     rv = vm.run()
 
-    # stack should have result of IADD
-    assert vm.stack[vm.sp] == 1 + 2
+    # vm should output be 3
+    out, err = capsys.readouterr()
+    assert out == "OUTPUT: {}\n".format(3)  # 1 + 2
 
     # should halt
     assert rv == HALT
 
 
-def test_load_two_constants_mul_and_halt():
+def test_load_two_constants_mul_and_halt(capsys):
     vm = VM(ICONST, 2, ICONST, 8, IMUL, PUTS, HALT)
     rv = vm.run()
 
-    # stack should have result of IMUL
-    assert vm.stack[vm.sp] == 2 * 8
+    # vm should output be -6
+    out, err = capsys.readouterr()
+    assert out == "OUTPUT: {}\n".format(16)  # 2 * 8
 
     # should halt
     assert rv == HALT
 
 
-def test_load_two_constants_sub_and_halt_neg_result():
+def test_load_two_constants_sub_and_halt_neg_result(capsys):
     vm = VM(ICONST, 14, ICONST, 20, ISUB, PUTS, HALT)
     rv = vm.run()
 
-    # stack should have result of ISUB
-    assert vm.stack[vm.sp] == 14 - 20
+    # vm should output be -6
+    out, err = capsys.readouterr()
+    assert out == "OUTPUT: {}\n".format(-6)  # 14 - 20
 
-    # should halt
+    # and should halt
     assert rv == HALT
 
 
-def test_load_two_constants_sub_and_halt_pos_result():
+def test_load_two_constants_sub_and_halt_pos_result(capsys):
     vm = VM(ICONST, 51, ICONST, 23, ISUB, PUTS, HALT)
     rv = vm.run()
 
-    # stack should have result of ISUB
-    assert vm.stack[vm.sp] == 51 - 23
+    # vm should output be 28
+    out, err = capsys.readouterr()
+    assert out == "OUTPUT: {}\n".format(28)  # 51 - 23
 
-    # should halt
+    # and should halt
     assert rv == HALT
     
-  
-def _test_loop():
-    instructions = [
-        # .GLOBALS 2; N, I
+
+def test_gstore_and_gload(capsys):
+    vm = VM(ICONST, 99,
+            GSTORE, 0,
+            GLOAD, 0,
+            PUTS, HALT)
+    rv = vm.run()
+    
+    out, err = capsys.readouterr()
+    # vm should output be 28
+    assert out == "OUTPUT: 99\n"
+
+    # and should halt
+    assert rv == HALT
+    
+    
+def test_loop():
+    vm = VM(
+        # .GLOBALS; N (CodeIndex: 0), I (CodeIndex: 1)
         # N = 10           ADDRESS
         ICONST, 10,            # 0
         GSTORE, 0,             # 2
@@ -122,8 +143,7 @@ def _test_loop():
         # DONE (24):
         # PRINT "LOOPED "+N+" TIMES."
         HALT                   # 24
-    ]
-    vm = VM(instructions)
+    )
     rv = vm.run()
 
     # should halt
