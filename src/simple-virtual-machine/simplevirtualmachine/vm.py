@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import operator
 
 from simplevirtualmachine.bytecodes import INVALID, IADD, ISUB, IMUL, \
     IEQ, ILT, BR, BRT, BRF, ICONST, LOAD, GLOAD, STORE, GSTORE, \
@@ -9,6 +10,33 @@ from simplevirtualmachine.bytecodes import INVALID, IADD, ISUB, IMUL, \
 TRUE = 1
 FALSE = 0
 
+class Stack(object):
+
+    def __init__(self):
+        self.items = []
+
+    def push(self, item):
+        self.items.append(item)
+
+    def pop(self, popcount = 1):
+        data = []
+        for i in range(popcount):
+            data.append(self.items.pop())
+
+        if len(data) == 1:
+            return data[0]
+        else:
+            return data
+
+    def isEmpty(self):
+        return (self.items == [])
+
+    def __iter__(self):
+        return self.items.__iter__()
+
+    def next(self):
+        self.items.next()
+
 class VM(object):
     """Implemenation of a (very) simple virtual machine."""
 
@@ -16,9 +44,8 @@ class VM(object):
         VM.DEFAULT_STACK_SIZE = 1000
         self.ip = 0
         self.fp = -1
-        self.sp = -1
         self.code = code
-        self.stack = [None for i in range(VM.DEFAULT_STACK_SIZE)]
+        self.stack = Stack()
         self.data = [None for i in range(VM.DEFAULT_STACK_SIZE)]
         self.logger = logging.getLogger(__name__)
         formatter = logging.Formatter('%(message)s')
@@ -39,20 +66,17 @@ class VM(object):
 
     def __str__(self):
         '''Return the current state of the VM (e.g. FP, IP, STACK, etc).'''
-        buf = ["FP: {fp} IP: {ip} SP: {sp}".format(fp=self.fp, ip=self.ip, sp=self.sp)]
+        buf = ["FP: {fp} IP: {ip}".format(fp=self.fp, ip=self.ip)]
         buf.append(self.dump_stack() + "\n")
         buf.append(self.dump_data_memory() + "\n")
         buf.append(self.dump_code_memory())
 
         return "\n".join(buf)
     
-    def top_two_stack(self):
-        b = self.stack[self.sp]
-        self.sp -= 1
-        a = self.stack[self.sp]
-        self.sp -= 1
-        return (b, a)
-
+    def binopt(self, operator):
+        [b, a] = self.stack.pop(2)
+        self.stack.push(operator(a, b))
+    
     def run(self):
         '''Simulate the fetch-decode execute cycle.'''
         # fetch opcode
@@ -65,70 +89,52 @@ class VM(object):
 
             # decode
             if opcode == IADD:
-                (b, a) = self.top_two_stack()
-                self.sp += 1
-                self.stack[self.sp] = a + b
+                self.binopt(operator.add)
             elif opcode == ISUB:
-                (b, a) = self.top_two_stack()
-                self.sp += 1
-                self.stack[self.sp] = a - b
+                self.binopt(operator.sub)
             elif opcode == IMUL:
-                (b, a) = self.top_two_stack()
-                self.sp += 1
-                self.stack[self.sp] = a * b
+                self.binopt(operator.mul)
             elif opcode == ILT:
-                (b, a) = self.top_two_stack()
-                self.sp += 1
-                self.stack[self.sp] = TRUE if a < b else FALSE
+                self.binopt(operator.lt)
             elif opcode == IEQ:
-                (b, a) = self.top_two_stack()
-                self.sp += 1
-                self.stack[self.sp] = TRUE if a == b else FALSE
+                self.binopt(operator.br)
             elif opcode == BR:
                 self.ip = self.code[self.ip]
             elif opcode == BRT:
                 addr = self.code[self.ip]
                 self.ip += 1
-                if self.stack[self.sp] == TRUE:
+                if self.stack.pop() == TRUE:
                     self.ip = addr
-                self.sp -= 1
             elif opcode == BRF:
                 addr = self.code[self.ip]
                 self.ip += 1
-                if self.stack[self.sp] == FALSE:
+                if self.stack.pop() == FALSE:
                     self.ip = addr
-                self.sp -= 1
             elif opcode == ICONST:
-                self.sp += 1
-                self.stack[self.sp] = self.code[self.ip]
+                self.stack.push(self.code[self.ip])
                 self.ip += 1
             elif opcode == LOAD:
                 offset = self.code[self.ip]
                 self.ip += 1
-                self.sp += 1
-                self.stack[self.sp] = self.stack[self.fp + offset]
+                self.stack.push(self.stack[self.fp+offset])
             elif opcode == GLOAD:
                 addr = self.code[self.ip]
                 self.ip += 1
-                self.sp += 1
-                self.stack[self.sp] = self.data[addr]
+                self.stack.push(self.data[addr])
             elif opcode == STORE:
                 offset = self.code[self.ip]
                 self.ip += 1
-                self.sp -= 1
-                self.stack[self.fp + offset] = self.stack[self.sp]
+                self.stack[self.fp + offset] = self.stack.pop()
             elif opcode == GSTORE:
                 addr = self.code[self.ip]
                 self.ip += 1
-                self.data[addr] = self.stack[self.sp]
-                self.sp -= 1
+                self.data[addr] = self.stack.pop()
             elif opcode == PUTS:
-                msg = "OUTPUT: {}".format(self.stack[self.sp])
-                self.sp -= 1
+                msg = "OUTPUT: {}".format(self.stack.pop())
                 print msg
                 self.logger.debug(msg)
             elif opcode == POP:
-                self.sp -= 1
+                self.stack.pop()
             elif opcode == CALL:
                 pass
             elif opcode == RET:
@@ -144,6 +150,7 @@ class VM(object):
             opcode = self.code[self.ip]
 
         self.logger.debug("{}".format(self))
+        self.logger.debug('run() returning {}'.format(rv))
         return rv
 
     def display_instruction(self):
@@ -162,19 +169,19 @@ class VM(object):
 
             operands = ", ".join(buf)
 
-        return "IP: {:04d}: SP: {:04d} OPCODE: {} OPERANDS: [{}]".format(
-            self.ip, self.sp, opcode, operands)
+        return "IP: {:04d}: OPCODE: {} OPERANDS: [{}]".format(
+            self.ip, opcode, operands)
 
     def dump_stack(self):
         '''Return the dump of the stack.'''
         buf = []
-        if self.sp < 0:
+        if self.stack.isEmpty():
             return ""
 
-        for idx in range(self.sp + 1):
-            buf.append(str(self.stack[idx]))
+        for s in self.stack:
+            buf.append(str(s))
             
-        return "SP {}, stack=[{}]".format(self.sp, ", ".join(buf))
+        return "stack=[{}]".format(", ".join(buf))
             
     def print_stack(self):
         self.logger.debug(self.dump_stack())
