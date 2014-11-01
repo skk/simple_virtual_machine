@@ -68,7 +68,7 @@ def test_pop():
 
 
 def test_call():
-    assert CALL.opcode == 16 and CALL.operand_count == 1
+    assert CALL.opcode == 16 and CALL.operand_count == 2
  
 
 def test_ret():
