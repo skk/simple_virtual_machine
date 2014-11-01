@@ -17,8 +17,10 @@ class Bytecode(object):
         Bytecode.opcodes[self.opcode] = self
                 
     def __str__(self):
-        return "Bytecode name: {}\topcode: {:02d}\toperand_count: {:02d}".format(
-            self.name.ljust(10), self.opcode, self.operand_count)
+        return "Bytecode name: {}\topcode: {:02d}\toperand_count: {:02d}".format(self.name.ljust(10), self.opcode, self.operand_count)
+
+    def dump_bytecode(self):
+        return "{}".format(self.name.ljust(10))
                 
     @classmethod
     def to_instruction_from_opcode(cls, opcode):
@@ -41,6 +43,6 @@ STORE = Bytecode("STORE", 12, 1)
 GSTORE = Bytecode("GSTORE", 13, 1)
 PUTS = Bytecode("PUTS", 14)
 POP = Bytecode("POP", 15, 1)
-CALL = Bytecode("CALL", 16, 1)
+CALL = Bytecode("CALL", 16, 2)
 RET = Bytecode("RET", 17, 1)
 HALT = Bytecode("HALT", 18)
