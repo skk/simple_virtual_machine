@@ -72,7 +72,7 @@ def test_call():
  
 
 def test_ret():
-    assert RET.opcode == 17 and RET.operand_count == 1
+    assert RET.opcode == 17 and RET.operand_count == 0
 
 
 def test_halt():
