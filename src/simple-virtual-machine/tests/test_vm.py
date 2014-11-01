@@ -8,12 +8,6 @@ from simplevirtualmachine.bytecodes import INVALID, IADD, ISUB, IMUL, \
 from simplevirtualmachine.vm import VM
 
 logger = logging.getLogger(__name__)
-formatter = logging.Formatter('%(asctime)s %(name)s - %(levelname)s - %(message)s')
-handler = logging.StreamHandler()
-handler.setFormatter(formatter)
-logger.addHandler(handler)
-logger.setLevel(logging.DEBUG)
- 
 
 def test_halt():
     assert VM(HALT).run() == HALT
@@ -102,7 +96,7 @@ def test_load_two_constants_sub_and_halt_pos_result(capsys):
 
     # and should halt
     assert rv == HALT
-    
+
 
 def test_gstore_and_gload(capsys):
     vm = VM(ICONST, 99,
@@ -110,15 +104,15 @@ def test_gstore_and_gload(capsys):
             GLOAD, 0,
             PUTS, HALT)
     rv = vm.run()
-    
+
     out, err = capsys.readouterr()
     # vm should output 28
     assert out == "OUTPUT: 99\n"
 
     # and should halt
     assert rv == HALT
-    
-    
+
+
 def test_loop(capsys):
     vm = VM(
         # .GLOBALS; N (CodeIndex: 0), I (CodeIndex: 1)
@@ -155,3 +149,41 @@ def test_loop(capsys):
     # should halt
     assert rv == HALT
 
+def test_factorial(capsys):
+    vm = VM(
+# def FACT: ARGS=1, LOCALS=0                    # ADDRESS
+# IF N < 2 RETURN 1
+        LOAD, -3,                               # 0
+        ICONST, 2,                              # 2
+        ILT,                                    # 4
+        BRF, 10,                                # 5
+        ICONST, 1,                              # 7
+        RET,                                    # 9
+#CONT
+# RETURN N * FACT(N-1)
+        LOAD, -3,                               # 10
+        LOAD, -2,                               # 12
+        ICONST, 1,                              # 14
+        ISUB,                                   # 16
+        CALL, 0, 1,                             # 17
+        IMUL,                                   # 20
+        RET,                                    # 21
+# def MAIN ARGS=0, LOCALS=0
+        ICONST, 5,                              # 22              # MAIN METHOD
+        CALL, 0, 1,                             # 24
+        PUTS,                                   # 27
+        HALT                                    # 28
+    )
+    print vm
+    vm.ip = 22
+
+    rv = vm.run()
+
+    out, err = capsys.readouterr()
+    # vm should output 13
+    print "out ", out
+    print "err ", err
+    # assert out == "OUTPUT: 13\n"
+
+    # should halt
+    assert rv == HALT
