@@ -1,27 +1,30 @@
+import logging
+
 class InvalidBytecodeError(Exception):
     def __init__(self, bytecode):
         self.bytecode = bytecode
 
     def __str__(self):
         return repr(self.bytecode)
-        
-        
+
+
 class Bytecode(object):
     """ A bytecode in our simple virtual machine."""
     opcodes = {}
-            
+
     def __init__(self, name, opcode, operand_count=0):
         self.name = name
         self.opcode = opcode
         self.operand_count = operand_count
+        self.logger = logging.getLogger(__name__)
         Bytecode.opcodes[self.opcode] = self
-                
+
     def __str__(self):
         return "Bytecode name: {}\topcode: {:02d}\toperand_count: {:02d}".format(self.name.ljust(10), self.opcode, self.operand_count)
 
     def dump_bytecode(self):
-        return "{}".format(self.name.ljust(10))
-                
+        return "{} ({})".format(self.name, self.operand_count)
+
     @classmethod
     def to_instruction_from_opcode(cls, opcode):
         return cls.opcodes[opcode]
@@ -32,7 +35,7 @@ IADD = Bytecode("IADD", 1)
 ISUB = Bytecode("ISUB", 2)
 IMUL = Bytecode("IMUL", 3)
 IEQ = Bytecode("IEQ", 5)
-ILT = Bytecode("IIT", 4)
+ILT = Bytecode("ILT", 4)
 BR = Bytecode("BR", 6, 1)
 BRT = Bytecode("BRR", 7, 1)
 BRF = Bytecode("BRF", 8, 1)
