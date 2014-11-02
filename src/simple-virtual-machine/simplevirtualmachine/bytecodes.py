@@ -20,7 +20,8 @@ class Bytecode(object):
         Bytecode.opcodes[self.opcode] = self
 
     def __str__(self):
-        return "Bytecode name: {}\topcode: {:02d}\toperand_count: {:02d}".format(self.name.ljust(10), self.opcode, self.operand_count)
+        return "Bytecode name: {}\topcode: {:02d}\toperand_count: {:02d}".format(
+            self.name.ljust(10), self.opcode, self.operand_count)
 
     def dump_bytecode(self):
         return "{} ({})".format(self.name, self.operand_count)
