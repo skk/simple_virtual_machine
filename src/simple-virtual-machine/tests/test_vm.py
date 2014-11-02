@@ -38,25 +38,25 @@ def test_load_and_halt(capsys):
     assert rv == HALT
 
 
-def test_load_two_constants(capsys):
-    vm = VM(ICONST, 1, ICONST, 2, PUTS, PUTS, HALT)
+def test_load_two_constants_and_halt(capsys):
+    vm = VM(ICONST, 30, ICONST, 42, PUTS, PUTS, HALT)
     rv = vm.run()
 
     # vm should output 1 and 2
     out, err = capsys.readouterr()
-    assert out == "OUTPUT: {}\nOUTPUT: {}\n".format(2, 1)
+    assert out == "OUTPUT: {}\nOUTPUT: {}\n".format(42, 30)
 
     # should halt
     assert rv == HALT
 
 
 def test_load_two_constants_add_and_halt(capsys):
-    vm = VM(ICONST, 1, ICONST, 2, IADD, PUTS, HALT)
+    vm = VM(ICONST, 30, ICONST, 12, IADD, PUTS, HALT)
     rv = vm.run()
 
-    # vm should output 3
+    # vm should output 42
     out, err = capsys.readouterr()
-    assert out == "OUTPUT: {}\n".format(3)  # 1 + 2
+    assert out == "OUTPUT: {}\n".format(42)  # 42 = 30+12
 
     # should halt
     assert rv == HALT
@@ -96,7 +96,6 @@ def test_load_two_constants_sub_and_halt_pos_result(capsys):
 
     # and should halt
     assert rv == HALT
-
 
 def test_gstore_and_gload(capsys):
     vm = VM(ICONST, 99,
@@ -149,7 +148,22 @@ def test_loop(capsys):
     # should halt
     assert rv == HALT
 
-def test_factorial(capsys):
+def test_factorial_1(capsys):
+    __test_factorial(capsys, 1)
+
+def test_factorial_5(capsys):
+    __test_factorial(capsys, 5)
+
+def test_factorial_10(capsys):
+    __test_factorial(capsys, 10)
+
+def test_factorial_100(capsys):
+    __test_factorial(capsys, 100)
+
+def __test_factorial(capsys, n):
+    import math
+    result = math.factorial(n)
+
     vm = VM(
 # def FACT: ARGS=1, LOCALS=0                    # ADDRESS
 # IF N < 2 RETURN 1
@@ -162,28 +176,24 @@ def test_factorial(capsys):
 #CONT
 # RETURN N * FACT(N-1)
         LOAD, -3,                               # 10
-        LOAD, -2,                               # 12
+        LOAD, -3,                               # 12
         ICONST, 1,                              # 14
         ISUB,                                   # 16
         CALL, 0, 1,                             # 17
         IMUL,                                   # 20
         RET,                                    # 21
 # def MAIN ARGS=0, LOCALS=0
-        ICONST, 5,                              # 22              # MAIN METHOD
+# print FACT( n )
+        ICONST, n,                              # 22    # MAIN METHOD
         CALL, 0, 1,                             # 24
         PUTS,                                   # 27
-        HALT                                    # 28
+        HALT,                                   # 28
+        start_ip = 22, stack_size = 1000
     )
-    print vm
-    vm.ip = 22
-
     rv = vm.run()
 
     out, err = capsys.readouterr()
-    # vm should output 13
-    print "out ", out
-    print "err ", err
-    # assert out == "OUTPUT: 13\n"
+    assert out == "OUTPUT: {}\n".format(result)
 
     # should halt
     assert rv == HALT
