@@ -15,12 +15,16 @@ class VM(object):
     """Implemenation of a (very) simple virtual machine."""
 
     def __init__(self, *code, **kwargs):
+        self.logger = logging.getLogger(__name__)
+        self.logger.info("\n")
+
         if 'stack_size' in kwargs:
             VM.DEFAULT_STACK_SIZE = kwargs['stack_size']
         else:
             VM.DEFAULT_STACK_SIZE = 10000
 
         if 'start_ip' in kwargs:
+            self.logger.debug("setting ip = {}".format(kwargs['start_ip']))
             self.ip = kwargs['start_ip']
         else:
             self.ip = 0
@@ -30,8 +34,6 @@ class VM(object):
         self.code = code
         self.stack = [None for i in range(VM.DEFAULT_STACK_SIZE)]
         self.data = [None for i in range(VM.DEFAULT_STACK_SIZE)]
-        self.logger = logging.getLogger(__name__)
-        self.logger.info("\n")
 
     @classmethod
     def format_instr_or_object(cls, obj):
@@ -56,8 +58,9 @@ class VM(object):
         if opr == operator.lt or opr == operator.eq:
             result = TRUE if result else FALSE
 
-        self.logger.debug("binopt: a {} b {} result {} opr {}".format(a, b, result, opr))
         self.stack[self.sp] = result
+        self.logger.debug("binopt: a {} b {} result {} opr {} stack[{}]={}".format(
+            a, b, result, opr, self.sp, result))
 
     def run(self):
         '''Simulate the fetch-decode execute cycle.'''
@@ -114,8 +117,8 @@ class VM(object):
             elif opcode == STORE:
                 offset = self.code[self.ip]
                 self.ip += 1
-                self.sp -= 1
                 self.stack[self.fp + offset] = self.stack[self.sp]
+                self.sp -= 1
             elif opcode == GSTORE:
                 addr = self.code[self.ip]
                 self.ip += 1
@@ -157,8 +160,6 @@ class VM(object):
 
                 # self.stack = self.remove_none_from_array(self.stack)
             elif opcode == RET:
-                self.logger.debug("RET sp {}".format(self.sp))
-
                 # pop return value
                 rvalue = self.stack[self.sp]
                 self.sp -= 1
@@ -209,12 +210,13 @@ class VM(object):
                                            format(opcode=opcode, ip=self.ip - 1))
 
             trace += self.dump_stack()
-            self.logger.info("{}".format(trace))
 
             opcode = self.code[self.ip]
+            self.logger.debug("new opcode: {}".format(opcode))
 
         self.print_code_memory()
         self.print_data_memory()
+        self.logger.info("returning")
         return rv
 
     def display_instruction(self):
@@ -263,7 +265,7 @@ class VM(object):
     def dump_data_memory(self):
         '''Return the dump of the data memory.'''
         addr = 0
-        buf = ["Data memory:\n"]
+        buf = ["\nData memory:\n"]
         for d in self.data:
             if d is not None:
                 buf.append("{0:>4d} {1}".format(addr, d))
@@ -277,7 +279,7 @@ class VM(object):
     def dump_code_memory(self):
         '''Return the dump of the code memory.'''
         addr = 0
-        buf = ["Code memory:\n"]
+        buf = ["\nCode memory:\n"]
         for c in self.code:
             buf.append("{0:>04d} {1}".format(addr, c))
             addr += 1
